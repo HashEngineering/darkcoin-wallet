@@ -434,9 +434,12 @@ class PlatformRepo private constructor(val walletApplication: WalletApplication)
 
     suspend fun getNotificationCount(date: Long): Int {
         var count = 0
-        val alert = userAlertDao.load(date)
-        if (alert != null) {
-            count++
+        // Developer Mode Feature
+        if (walletApplication.configuration.developerMode) {
+            val alert = userAlertDao.load(date)
+            if (alert != null) {
+                count++
+            }
         }
         val results = searchContacts("", UsernameSortOrderBy.DATE_ADDED)
         if (results.status == Status.SUCCESS) {
@@ -1376,4 +1379,15 @@ class PlatformRepo private constructor(val walletApplication: WalletApplication)
             }
         }
     }
+
+    fun validateInvitation(txId: String): Boolean {
+        val tx = platform.client.getTransaction(txId)
+        var identity: Identity? = null
+        if (tx != null) {
+            val cfTx = CreditFundingTransaction(Constants.NETWORK_PARAMETERS, tx.toByteArray())
+            identity = platform.identities.get(cfTx.creditBurnIdentityIdentifier.toStringBase58())
+        }
+        return identity == null
+    }
+
 }
